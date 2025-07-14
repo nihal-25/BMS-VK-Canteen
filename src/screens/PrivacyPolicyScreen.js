@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { colors } from '../utils/colors';
 
 const PrivacyPolicyScreen = () => {
   const navigation = useNavigation();
@@ -9,10 +10,12 @@ const PrivacyPolicyScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color="gray" />
+              </TouchableOpacity>
 
         <Text style={styles.header}>Privacy Policy</Text>
 
@@ -59,6 +62,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
+    paddingTop:30
   },
   container: {
     paddingHorizontal: 16,
@@ -74,11 +78,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   header: {
+    color:colors.pure,
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
   },
   subheader: {
+    color:colors.pure,
     fontSize: 18,
     fontWeight: '600',
     marginTop: 16,
@@ -86,7 +92,7 @@ const styles = StyleSheet.create({
   },
   paragraph: {
     fontSize: 14,
-    color: '#444',
+    color: colors.newg,
     lineHeight: 20,
     marginBottom: 10,
   },

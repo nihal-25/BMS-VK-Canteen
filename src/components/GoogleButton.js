@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.white,
-    top:5,
+    top:15,
     
   },
   logo: {

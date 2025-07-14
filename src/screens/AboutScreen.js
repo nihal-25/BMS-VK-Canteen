@@ -62,13 +62,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
-    paddingTop: 80,
+    paddingTop: 60,
     paddingHorizontal: 16,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center", // Center the items horizontally
+    justifyContent: "center", 
     marginBottom: 20,
   },
   about: {

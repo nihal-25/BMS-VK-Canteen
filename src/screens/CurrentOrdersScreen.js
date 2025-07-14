@@ -5,6 +5,9 @@ import { firestore } from '../config/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { colors } from '../utils/colors';
+
 
 
 const CurrentOrdersScreen = () => {
@@ -66,7 +69,7 @@ const CurrentOrdersScreen = () => {
             <View key={idx} style={styles.foodItem}>
               
               <View>
-                <Text>{food.FoodName} x{food.quantity}</Text>
+                <Text style={styles.FoodName}>{food.FoodName} x {food.quantity}</Text>
               </View>
             </View>
           ))}
@@ -79,9 +82,12 @@ const CurrentOrdersScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.backButton}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
+      <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color="gray" />
+              </TouchableOpacity>
 
       <FlatList
         data={orders}
@@ -100,47 +106,63 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 8,
   },
- backButton: {
-  paddingHorizontal: 16,
-  paddingTop: 8, // lower the button a bit
-  paddingBottom: 8,
-},
 
-  backText: {
-    fontSize: 18,
-    color: '#007bff',
+  backButton: {
+    paddingHorizontal: 16,
+    paddingTop: 40,
+    paddingBottom: 8,
   },
+
   orderCard: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     marginBottom: 16,
-    backgroundColor: '#fdfdfd',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
+
   status: {
     fontWeight: 'bold',
-    color: '#0066cc',
+    color: colors.pure, 
     fontSize: 16,
     marginBottom: 6,
+    textTransform: 'capitalize',
   },
+
   info: {
     fontSize: 14,
     marginBottom: 4,
+    color: colors.newg,
   },
+
   subheading: {
-    marginTop: 6,
+    marginTop: 8,
     fontWeight: '600',
+    fontSize: 15,
+    color: colors.pure, 
   },
+
   foodItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 4,
   },
+
   foodImage: {
     width: 40,
     height: 40,
     marginRight: 10,
     borderRadius: 6,
   },
+
+  FoodName: {
+    color:colors.newg,
+    fontSize: 14,
+  }
 });

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { AuthenticationContext } from "../service/authentication.context";
+import { colors } from "../utils/colors";
 
 const EditProfileScreen = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: "gray",
+    color: colors.pure,
     marginBottom: 5,
   },
   input: {

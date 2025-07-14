@@ -5,6 +5,9 @@ import { firestore } from '../config/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { colors } from '../utils/colors';
+
 
 
 const MyOrdersScreen = () => {
@@ -79,9 +82,12 @@ const MyOrdersScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.backButton}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
+      <TouchableOpacity
+                      style={styles.backButton}
+                      onPress={() => navigation.goBack()}
+                    >
+                      <Ionicons name="arrow-back" size={24} color="gray" />
+                    </TouchableOpacity>
 
       <FlatList
         data={orders}
@@ -102,14 +108,10 @@ const styles = StyleSheet.create({
   },
  backButton: {
   paddingHorizontal: 16,
-  paddingTop: 8, // lower the button a bit
+  paddingTop: 40, 
   paddingBottom: 8,
 },
 
-  backText: {
-    fontSize: 18,
-    color: '#007bff',
-  },
   orderCard: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -120,7 +122,7 @@ const styles = StyleSheet.create({
   },
   status: {
     fontWeight: 'bold',
-    color: '#0066cc',
+    color: colors.pure,
     fontSize: 16,
     marginBottom: 6,
   },

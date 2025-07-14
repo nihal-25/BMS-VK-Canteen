@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { colors } from "../utils/colors";
+
 
 const faqs = [
   {
@@ -32,10 +34,12 @@ const HelpFaqScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container}>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color="gray" />
+              </TouchableOpacity>
 
         <Text style={styles.header}>Help & FAQ</Text>
         {faqs.map((faq, index) => (
@@ -61,9 +65,10 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 40,
   },
   backButton: {
+    paddingTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
@@ -73,6 +78,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   header: {
+    color:colors.pure,
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
@@ -88,13 +94,14 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   question: {
+    color:colors.pure,
     fontSize: 16,
     fontWeight: '600',
   },
   answer: {
     marginTop: 6,
     fontSize: 14,
-    color: '#555',
+    color: colors.newg,
     lineHeight: 20,
   },
 });

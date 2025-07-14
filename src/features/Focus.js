@@ -1,10 +1,26 @@
 import React, { useContext, useState } from 'react';
-import { SafeAreaView, StyleSheet, View, Text, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import {
+  SafeAreaView,
+  StyleSheet,
+  View,
+  Text,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import { TextInput } from 'react-native-paper';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { getAuth, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+
 import { AuthenticationContext } from '../service/authentication.context';
 import Button from '../components/button';
 import Divider from '../components/Divider';
 import { colors } from '../utils/colors';
+import GoogleButton from '../components/GoogleButton';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const Focus = ({ navigation }) => {
   const [subject, setSubject] = useState('');
@@ -13,20 +29,20 @@ const Focus = ({ navigation }) => {
 
   const handleSignUpPress = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
+
     if (!subject) {
       setErrorMessage('Please enter an email address');
       return;
     }
-  
+
     if (!emailRegex.test(subject)) {
       setErrorMessage('Invalid email format');
       return;
     }
-  
+
     setErrorMessage('');
     navigation.navigate('SignUp', { email: subject });
-    setSubject(''); // ← This clears the input after navigation
+    setSubject('');
   };
 
   const handleSignInPress = () => {
@@ -37,6 +53,34 @@ const Focus = ({ navigation }) => {
   const onChangeSearch = (query) => {
     const lowerCaseQuery = query.toLowerCase();
     setSubject(lowerCaseQuery);
+  };
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: '55551343994-7t0rheie1nc8g0835k9rr80r1dev5fl8.apps.googleusercontent.com',
+    webClientId: '55551343994-7t0rheie1nc8g0835k9rr80r1dev5fl8.apps.googleusercontent.com',
+    androidClientId:'55551343994-b4s4smd06036oos2p190i0rtaq8km000.apps.googleusercontent.com',
+    iosClientId:'55551343994-01oit49cep3s863rb18plt5bfn83kost.apps.googleusercontent.com',
+    redirectUri: 'https://auth.expo.io/@nihal2/VK',
+  });
+
+  React.useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.authentication;
+      const auth = getAuth();
+      const credential = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, credential)
+        .then(() => {
+          // Navigate to home or dashboard
+          navigation.navigate('Home');
+        })
+        .catch((err) => {
+          Alert.alert('Google Sign-In Error', err.message);
+        });
+    }
+  }, [response]);
+
+  const handleGoogleSignUp = () => {
+    promptAsync();
   };
 
   return (
@@ -80,8 +124,7 @@ const Focus = ({ navigation }) => {
               />
             </View>
             <Divider text="or continue with" />
-            {/* Remove the Google button */}
-            {/* <GoogleButton onPress={handleGoogleSignUp} style={styles.google} /> */}
+            <GoogleButton onPress={handleGoogleSignUp} style={styles.google} />
           </View>
           <View style={styles.bottomText}>
             <Text style={styles.text5}>
@@ -152,6 +195,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     bottom: 40,
   },
+  
   link: {
     color: colors.black,
   },

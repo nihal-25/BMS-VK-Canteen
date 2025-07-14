@@ -19,15 +19,22 @@
       }
     },
     "android": {
-      
+      "package": "com.nihal2.VK3",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
-      
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e0f41869-1224-45ec-83dd-e56158015b2d"
+      }
     }
   }
 }

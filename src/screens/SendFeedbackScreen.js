@@ -1,21 +1,31 @@
-import React from 'react';
-import { SafeAreaView, View, Text, StyleSheet, Linking, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import React from "react";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  Linking,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { colors } from "../utils/colors";
 
 const SendFeedbackScreen = () => {
   const navigation = useNavigation();
 
   const handleEmailPress = () => {
-    Linking.openURL('mailto:vk-bms@gmail.com');
+    Linking.openURL("mailto:vk-bms@gmail.com");
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-          <Text style={styles.backText}>Back</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="gray" />
         </TouchableOpacity>
 
         <Text style={styles.header}>Send Feedback</Text>
@@ -40,15 +50,15 @@ export default SendFeedbackScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   container: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop:45,
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   backText: {
@@ -56,23 +66,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   header: {
+    color:colors.pure,
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 12,
   },
   message: {
     fontSize: 16,
-    color: '#444',
+    color: colors.newg,
     marginBottom: 10,
   },
   email: {
     fontSize: 16,
-    color: '#007aff',
+    color: "#007aff",
     marginBottom: 10,
   },
   note: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginTop: 20,
   },
 });
