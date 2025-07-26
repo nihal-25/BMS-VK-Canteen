@@ -77,42 +77,35 @@ const MainScreen = ({route, navigation }) => {
 
  useEffect(() => {
   const fetchFoodData = async () => {
-    const foodDataQry = collection(firestore, locationId);
+    if (!locationId) return;
 
-    // Get the snapshot of FoodData collection
-    const unsubscribe = onSnapshot(foodDataQry, async (snapshot) => {
-      const data = [];
+    const foodDataRef = collection(firestore, locationId);
 
-      // Loop over each document in FoodData collection
-      for (const docSnapshot of snapshot.docs) {
-        const foodItems = [];
-        const foodCollectionRef = collection(docSnapshot.ref, "food");
+    const unsubscribe = onSnapshot(foodDataRef, (snapshot) => {
+      const data = snapshot.docs.map((doc) => {
+        const docData = doc.data();
+        const nameKey = docData.FoodName?.trim().toLowerCase();
+        const price = docData.FoodPrice;
 
-        // Fetch all documents in the 'food' subcollection for each FoodData document
-        const foodSnapshot = await getDocs(foodCollectionRef);
-        foodSnapshot.forEach((foodDoc) => {
-          foodItems.push({
-            id: foodDoc.data().FoodName,
-            FoodName: foodDoc.data().FoodName,
-            FoodPrice: foodDoc.data().FoodPrice,
-            FoodImageUrl: foodDoc.data().FoodImageUrl, // If there's an image field
-            InStock: foodDoc.data().InStock,
-            Pop:foodDoc.data().Pop,
-          });
-        });
-
-        // Push the food items to the data array
-        data.push(...foodItems);
-      }
+        return {
+          id: nameKey + "_" + price,  // ✅ synthetic ID matches popularDishes
+          FoodName: docData.FoodName,
+          FoodPrice: price,
+          FoodImageUrl: docData.FoodImageUrl,
+          InStock: docData.InStock,
+          Pop: docData.Pop,
+        };
+      });
 
       setFoodData(data);
     });
 
-    return () => unsubscribe(); // Unsubscribe when the component unmounts
+    return () => unsubscribe(); // Clean up on unmount
   };
 
   fetchFoodData();
-}, []);
+}, [locationId]);
+
 
 const onChangeSearch = (query) => setSearchQuery(query);
 const incrementQuantity = (item) => {
@@ -127,40 +120,79 @@ const decrementQuantity = (item) => {
 
 const [topPicks, setTopPicks] = useState([]);
 
-const fetchTopOrderedItems = async () => {
+useEffect(() => {
   const user = getAuth().currentUser;
   if (!user || !locationId) return;
 
   const userRef = doc(firestore, 'userOrders', user.uid);
-  const pastOrdersSnap = await getDocs(collection(userRef, 'pastOrders'));
+  const pastOrdersRef = collection(userRef, 'pastOrders');
+  const foodDataRef = collection(firestore, locationId);
 
-  const orderMap = new Map();
+  let unsubscribeOrders;
+  let unsubscribeStock;
 
-  pastOrdersSnap.forEach(doc => {
-    const order = doc.data();
-    
-    if (order.location !== locationId) return; // ✅ Filter by location
+  let currentOrders = [];
+  let currentStockMap = new Map();
 
-    order.cart?.forEach(item => {
-      const key = item.FoodName?.trim().toLowerCase();
-      if (!key) return;
+  const updateTopPicks = () => {
+    const orderMap = new Map();
 
-      const current = orderMap.get(key) || { ...item, quantity: 0 };
-      current.quantity += item.quantity || 0;
-      orderMap.set(key, current);
+    currentOrders.forEach(order => {
+      if (order.location !== locationId) return;
+
+      order.cart?.forEach(item => {
+        const nameKey = item.FoodName?.trim().toLowerCase();
+        if (!nameKey) return;
+
+        const uniqueKey = nameKey + '_' + item.FoodPrice;
+
+        const existing = orderMap.get(uniqueKey) || {
+          ...item,
+          quantity: 0,
+          id: uniqueKey,
+        };
+
+        existing.quantity += item.quantity || 0;
+        orderMap.set(uniqueKey, existing);
+      });
     });
+
+    const sorted = Array.from(orderMap.values())
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5)
+      .map(item => ({
+        ...item,
+        InStock: currentStockMap.get(item.id) ?? false,
+      }));
+
+    setTopPicks(sorted);
+  };
+
+  // 👂 Real-time listener for user's pastOrders
+  unsubscribeOrders = onSnapshot(pastOrdersRef, (snapshot) => {
+    currentOrders = snapshot.docs.map(doc => doc.data());
+    updateTopPicks();
   });
 
-  const sorted = Array.from(orderMap.values())
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 5);
+  // 👂 Real-time listener for stock (FoodData or FoodData2)
+  unsubscribeStock = onSnapshot(foodDataRef, (snapshot) => {
+    currentStockMap = new Map();
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const key = data.FoodName?.trim().toLowerCase() + '_' + data.FoodPrice;
+      const inStock = data.InStock === true || data.InStock === 'true' || data.InStock === 1;
+      currentStockMap.set(key, inStock);
+    });
+    updateTopPicks();
+  });
 
-  setTopPicks(sorted);
-};
-
-useEffect(() => {
-  fetchTopOrderedItems();
+  return () => {
+    if (unsubscribeOrders) unsubscribeOrders();
+    if (unsubscribeStock) unsubscribeStock();
+  };
 }, [locationId]);
+
+
 
  
 
@@ -270,82 +302,122 @@ useEffect(() => {
     
   };
 
-  const [popularDishes, setPopularDishes] = useState([]);
-  
-  const fetchPopularDishes = async () => {
-  try {
-    const snapshot = await getDocs(collection(firestore, 'confirmedOrders'));
+const [popularDishes, setPopularDishes] = useState([]);
 
+useEffect(() => {
+  if (!locationId) return;
+
+  const confirmedOrdersRef = collection(firestore, 'confirmedOrders');
+  const foodRef = collection(firestore, locationId);
+
+  let unsubscribeOrders;
+  let unsubscribeStock;
+
+  // Temp in-memory data holders
+  let currentOrders = [];
+  let currentStockMap = new Map();
+
+  // 👉 Recalculate Top 5 Popular Dishes
+  const updatePopularDishes = () => {
     const dishMap = new Map();
 
-    snapshot.forEach(doc => {
-      const order = doc.data();
-      if (order.location !== locationId) return; // filter by location
+    currentOrders.forEach(order => {
+      if (order.location !== locationId) return;
 
       order.cart?.forEach(item => {
-        const key = item.FoodName?.trim().toLowerCase();
-        if (!key) return;
+        const nameKey = item.FoodName?.trim().toLowerCase();
+        if (!nameKey) return;
 
-        const current = dishMap.get(key) || { ...item, quantity: 0 };
-        current.quantity += item.quantity || 0;
-        dishMap.set(key, current);
+        const uniqueKey = nameKey + '_' + item.FoodPrice;
+
+        const existing = dishMap.get(uniqueKey) || {
+          ...item,
+          quantity: 0,
+          id: uniqueKey,
+        };
+
+        existing.quantity += item.quantity || 0;
+        dishMap.set(uniqueKey, existing);
       });
     });
 
     const sorted = Array.from(dishMap.values())
       .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 5);
+      .slice(0, 5)
+      .map(item => ({
+        ...item,
+        InStock: currentStockMap.get(item.id) ?? false,
+      }));
 
     setPopularDishes(sorted);
-  } catch (err) {
-    console.error('Error fetching popular dishes:', err);
-  }
-};
-
-useEffect(() => {
-  fetchPopularDishes();
-}, [locationId]);
-  
-
-  const renderPopularDishItem = ({ item }) => {
-    const cartItem = cart.find((cartItem) => cartItem.id === item.id);
-    const quantity = cartItem ? cartItem.quantity : 0;
-    if (!item) return null; 
-      return (
-        <View style={styles.topPickItem}>
-          <Image source={{ uri: item.FoodImageUrl }} style={styles.topPickImage} />
-          <Text style={styles.topPickTitle}>{item.FoodName}</Text>
-          <Text style={styles.itemPrice}>₹{item.FoodPrice}</Text>
-  
-          {(item.InStock === true || item.InStock === 'true' || item.InStock === 1) ? (
-                  quantity > 0 ? (
-                    <View style={styles.quantityContainer}>
-                      <Button mode="outlined" onPress={() => decrementQuantity(item)}>
-                        <Ionicons name="remove" size={16} color="black" />
-                      </Button>
-                      <Text style={styles.quantityText}>{quantity}</Text>
-                      <Button mode="outlined" onPress={() => incrementQuantity(item)}>
-                        <Ionicons name="add" size={16} color="black" />
-                      </Button>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.addButton}
-                      onPress={() => incrementQuantity(item)}
-                    >
-                      <Text style={styles.addButtonText}>Add</Text>
-                    </TouchableOpacity>
-                  ) 
-                  ): (
-              <TouchableOpacity style={styles.outOfStockButton} disabled>
-                <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
-              </TouchableOpacity>
-            )}
-        </View>
-      );
-     
-    
   };
+
+  // 👂 Listener for confirmedOrders (real-time orders)
+  unsubscribeOrders = onSnapshot(confirmedOrdersRef, (snapshot) => {
+    currentOrders = snapshot.docs.map(doc => doc.data());
+    updatePopularDishes();
+  });
+
+  // 👂 Listener for stock updates (FoodData)
+  unsubscribeStock = onSnapshot(foodRef, (snapshot) => {
+    currentStockMap = new Map();
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const key = data.FoodName?.trim().toLowerCase() + '_' + data.FoodPrice;
+      const inStock = data.InStock === true || data.InStock === 'true' || data.InStock === 1;
+      currentStockMap.set(key, inStock);
+    });
+    updatePopularDishes();
+  });
+
+  // 🚿 Cleanup on unmount
+  return () => {
+    if (unsubscribeOrders) unsubscribeOrders();
+    if (unsubscribeStock) unsubscribeStock();
+  };
+}, [locationId]);
+
+
+// ✅ Render a single dish item
+const renderPopularDishItem = ({ item }) => {
+  if (!item) return null;
+
+  const cartItem = cart.find((cartItem) => cartItem.id === item.id);
+  const quantity = cartItem ? cartItem.quantity : 0;
+
+  return (
+    <View style={styles.topPickItem}>
+      <Image source={{ uri: item.FoodImageUrl }} style={styles.topPickImage} />
+      <Text style={styles.topPickTitle}>{item.FoodName}</Text>
+      <Text style={styles.itemPrice}>₹{item.FoodPrice}</Text>
+
+      {item.InStock ? (
+        quantity > 0 ? (
+          <View style={styles.quantityContainer}>
+            <Button mode="outlined" onPress={() => decrementQuantity(item)}>
+              <Ionicons name="remove" size={16} color="black" />
+            </Button>
+            <Text style={styles.quantityText}>{quantity}</Text>
+            <Button mode="outlined" onPress={() => incrementQuantity(item)}>
+              <Ionicons name="add" size={16} color="black" />
+            </Button>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => incrementQuantity(item)}
+          >
+            <Text style={styles.addButtonText}>Add</Text>
+          </TouchableOpacity>
+        )
+      ) : (
+        <TouchableOpacity style={styles.outOfStockButton} disabled>
+          <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
   
  
@@ -447,12 +519,12 @@ useEffect(() => {
               <FlatList
                 data={popularDishes}
                 renderItem={renderPopularDishItem}
-                keyExtractor={(item) => item.FoodName}
+                keyExtractor={(item) => item.id}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.flatList}
               />
-            </View>
+           </View>
            
           </>
         }

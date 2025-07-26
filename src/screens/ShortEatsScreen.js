@@ -1,40 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, Image, FlatList, SafeAreaView, TouchableOpacity,StyleSheet } from 'react-native';
 import { Searchbar, Button, Appbar } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
 import { colors } from '../utils/colors';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, onSnapshot, query, where } from 'firebase/firestore';
 import { useLocation } from './LocationContext';
 
 const ShortEatsScreen = ({ navigation }) => {
   const firestore = getFirestore();
-  const { locationId } = useLocation() ;
-  const [breakfastData, setBreakfastData] = useState([]); // Initialize as an empty array
+  const { locationId } = useLocation();
+  const [breakfastData, setBreakfastData] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { cart, addToCart, removeFromCart } = useCart();
 
-  // Fetch data from Firestore
   useEffect(() => {
-    const fetchBreakfastData = async () => {
-      try {
-        const foodCollection = collection(firestore, locationId, "4new", "food"); // Reference to the 'food' collection inside '1new' document
-        const foodSnapshot = await getDocs(foodCollection);
-        const foodItems = foodSnapshot.docs.map(doc => ({
-          id: doc.data().FoodName,
-            FoodName: doc.data().FoodName,
-            FoodPrice: doc.data().FoodPrice,
-            FoodImageUrl: doc.data().FoodImageUrl,
-            InStock: doc.data().InStock,
-        }));
-        setBreakfastData(foodItems); // Set the fetched data
-      } catch (error) {
-        console.error("Error fetching food data:", error);
-      }
-    };
+    if (!locationId) return;
 
-    fetchBreakfastData();
-  }, []);
+    const foodCollection = collection(firestore, locationId);
+    const breakfastQuery = query(foodCollection, where("Category", "==", "Snacks"));
+
+    const unsubscribe = onSnapshot(breakfastQuery, (snapshot) => {
+      const foodItems = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const nameKey = data.FoodName?.trim().toLowerCase();
+        const price = data.FoodPrice;
+
+        return {
+          id: nameKey + '_' + price,
+          FoodName: data.FoodName,
+          FoodPrice: price,
+          FoodImageUrl: data.FoodImageUrl,
+          InStock: data.InStock,
+        };
+      });
+      setBreakfastData(foodItems);
+    }, (error) => {
+      console.error("Error fetching real-time data:", error);
+    });
+
+    return () => unsubscribe();
+  }, [locationId]);
 
   const onChangeSearch = (query) => setSearchQuery(query);
 
@@ -54,39 +60,37 @@ const ShortEatsScreen = ({ navigation }) => {
       <View style={styles.itemContainer}>
         <Image source={{ uri: item.FoodImageUrl }} style={styles.itemImage} />
         <Text style={styles.itemName}>{item.FoodName}</Text>
-        <Text style={styles.itemPrice}>₹{item.FoodPrice}</Text> 
+        <Text style={styles.itemPrice}>₹{item.FoodPrice}</Text>
         {(item.InStock === true || item.InStock === 'true' || item.InStock === 1) ? (
           quantity > 0 ? (
-          <View style={styles.quantityContainer}>
-            <Button mode="outlined" onPress={() => decrementQuantity(item)}>
-              <Ionicons name="remove" size={16} color="black" />
-            </Button>
-            <Text style={styles.quantityText}>{quantity}</Text>
-            <Button mode="outlined" onPress={() => incrementQuantity(item)}>
-              <Ionicons name="add" size={16} color="black" />
-            </Button>
-          </View>
+            <View style={styles.quantityContainer}>
+              <Button mode="outlined" onPress={() => decrementQuantity(item)}>
+                <Ionicons name="remove" size={16} color="black" />
+              </Button>
+              <Text style={styles.quantityText}>{quantity}</Text>
+              <Button mode="outlined" onPress={() => incrementQuantity(item)}>
+                <Ionicons name="add" size={16} color="black" />
+              </Button>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => incrementQuantity(item)}
+            >
+              <Text style={styles.addButtonText}>Add</Text>
+            </TouchableOpacity>
+          )
         ) : (
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => incrementQuantity(item)}
-          >
-            <Text style={styles.addButtonText}>Add</Text>
-          </TouchableOpacity>
-        )
-        ):(
           <TouchableOpacity style={styles.outOfStockButton} disabled>
-      <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
-    </TouchableOpacity>
+            <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
+          </TouchableOpacity>
         )}
       </View>
     );
   };
 
-  // Calculate total items in cart
   const totalItemsInCart = cart.reduce((acc, curr) => acc + curr.quantity, 0);
 
-  // Function to navigate to cart screen
   const navigateToCart = () => {
     navigation.navigate('Cart');
   };
@@ -120,6 +124,7 @@ const ShortEatsScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
