@@ -2,6 +2,7 @@
 import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useLocation } from './LocationContext'; // Adjust the path if needed
+import { colors } from '../utils/colors';
 
 const LocationSelectionScreen = ({ navigation }) => {
   const { setLocationId } = useLocation();
@@ -18,13 +19,13 @@ const LocationSelectionScreen = ({ navigation }) => {
       <TouchableOpacity
         style={styles.button}
         onPress={() => selectLocation('FoodData')}>
-        <Text>Location A</Text>
+        <Text style={styles.loc}>Vidhyarthi Khaana(Law)</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.button}
         onPress={() => selectLocation('FoodData2')}>
-        <Text>Location B</Text>
+        <Text style={styles.loc}>Vidhyarthi Khaana(Sports)</Text>
       </TouchableOpacity>
     </View>
   );
@@ -32,15 +33,19 @@ const LocationSelectionScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, marginBottom: 20 },
+  title: { fontSize: 24, marginBottom: 20, color:colors.pure},
   button: {
     padding: 15,
-    backgroundColor: '#ddd',
+    backgroundColor: colors.pure,
     marginVertical: 10,
     borderRadius: 10,
     width: 200,
     alignItems: 'center',
+    
   },
+  loc:{
+    color:'#FFFFFF',
+  }
 });
 
 export default LocationSelectionScreen;

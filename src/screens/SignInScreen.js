@@ -8,11 +8,10 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { TextInput } from '../components/TextInput';
 import { Button } from '../components/button';
-//import GoogleButton from '../components/GoogleButton';
+import GoogleButton from '../components/GoogleButton';
 import { colors } from '../utils/colors';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -26,39 +25,40 @@ export const SignInScreen = ({ navigation, route }) => {
   const handleSignInPress = async () => {
     setEmailError('');
     setPasswordError('');
-  
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
+
     if (!email) {
       setEmailError('Email is required');
       return;
     }
-  
+
     if (!emailRegex.test(email)) {
       setEmailError('Invalid email format');
       return;
     }
-  
+
     if (!password) {
       setPasswordError('Password is required');
       return;
     }
-  
+
     try {
       const auth = getAuth();
       await signInWithEmailAndPassword(auth, email, password);
-      
-      // 🔄 Go to location selector instead of MainScreen
+
+      // Redirect to location selector screen
       navigation.replace('LocationSelect');
-  
+
     } catch (error) {
       console.log(error);
       setPasswordError('Incorrect email or password');
     }
   };
-  
+
   const handleGoogleSignIn = () => {
-    // Google Sign-In logic
+    // TODO: Add Google Sign-In logic
+    console.log('Google Sign-In pressed');
   };
 
   const handleForgotPasswordPress = () => {
@@ -81,6 +81,7 @@ export const SignInScreen = ({ navigation, route }) => {
             <Text style={styles.header}>Sign In</Text>
             <Text style={styles.subHeader}>Please sign in to continue</Text>
           </View>
+
           <View style={styles.formContainer}>
             <Text style={styles.intext}>Email</Text>
             <TextInput
@@ -134,7 +135,7 @@ export const SignInScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.googleButtonContainer}>
-            {/* <GoogleButton onPress={handleGoogleSignIn} /> */}
+            <GoogleButton onPress={handleGoogleSignIn} />
           </View>
 
           <View style={styles.bottomTextContainer}>
