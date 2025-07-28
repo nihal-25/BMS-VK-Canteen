@@ -58,7 +58,11 @@ const CurrentOrdersScreen = () => {
   const renderItem = ({ item }) => (
     <View style={styles.orderCard}>
       <Text style={styles.status}>{item.status}</Text>
-      <Text style={styles.info}>Location: {item.location}</Text>
+      <Text style={styles.info}>Location: {item.location === "FoodData"
+        ? "Law Canteen"
+        : item.location === "FoodData2"
+        ? "Sports Canteen"
+        : "Select Location"}</Text>
       <Text style={styles.info}>Date: {item.timestamp?.toDate().toLocaleString()}</Text>
       <Text style={styles.info}>Total: ₹{parseFloat(item.total)}</Text>
 
@@ -80,23 +84,27 @@ const CurrentOrdersScreen = () => {
 
   if (loading) return <ActivityIndicator size="large" style={{ marginTop: 40 }} />;
 
-  return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Ionicons name="arrow-back" size={24} color="gray" />
-              </TouchableOpacity>
+ return (
+  <SafeAreaView style={{ flex: 1 }}>
+    <TouchableOpacity
+      style={styles.backButton}
+      onPress={() => navigation.goBack()}
+    >
+      <Ionicons name="arrow-back" size={24} color="gray" />
+    </TouchableOpacity>
 
-      <FlatList
-        data={orders}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.container}
-      />
-    </SafeAreaView>
-  );
+    <FlatList
+      data={orders}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      contentContainerStyle={styles.container}
+      ListEmptyComponent={
+        <Text style={styles.emptyText}>No Orders Currently. Order Now!</Text>
+      }
+    />
+  </SafeAreaView>
+);
+
 };
 
 export default CurrentOrdersScreen;
@@ -140,6 +148,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: colors.newg,
   },
+  emptyText: {
+  textAlign: 'center',
+  marginTop: 50,
+  fontSize: 16,
+  color: 'red',
+},
+
 
   subheading: {
     marginTop: 8,

@@ -85,34 +85,41 @@ const CartScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="Cart" />
-      </Appbar.Header>
-      <FlatList
-        data={cart}
-        renderItem={renderCartItem}
-        keyExtractor={(item) => item.FoodName}
-        contentContainerStyle={styles.cartList}
-      />
-      <View style={styles.cartTotal}>
-        <Text style={styles.cartTotalText}>Total:</Text>
-        <Text style={styles.cartTotalAmount}>
-          ₹{cart.reduce((acc, item) => acc + item.FoodPrice * item.quantity, 0).toFixed(2)}
-        </Text>
-      </View>
-      <Button
-        mode="contained"
-        onPress={handlePay} 
-        style={styles.proceedButton}
-        color={colors.green} 
-        disabled={cart.length === 0} // Disable button if cart is empty
-      >
-        Proceed to Pay
-      </Button>
-    </SafeAreaView>
-  );
+  <SafeAreaView style={styles.container}>
+    <Appbar.Header>
+      <Appbar.BackAction onPress={() => navigation.goBack()} />
+      <Appbar.Content title="Cart" />
+    </Appbar.Header>
+
+    <FlatList
+      data={cart}
+      renderItem={renderCartItem}
+      keyExtractor={(item) => item.FoodName}
+      contentContainerStyle={styles.cartList}
+      ListEmptyComponent={
+        <Text style={styles.emptyCartText}>Your cart is empty. Add some items!</Text>
+      }
+    />
+
+    <View style={styles.cartTotal}>
+      <Text style={styles.cartTotalText}>Total:</Text>
+      <Text style={styles.cartTotalAmount}>
+        ₹{cart.reduce((acc, item) => acc + item.FoodPrice * item.quantity, 0).toFixed(2)}
+      </Text>
+    </View>
+
+    <Button
+      mode="contained"
+      onPress={handlePay}
+      style={styles.proceedButton}
+      color={colors.green}
+      disabled={cart.length === 0}
+    >
+      Proceed to Pay
+    </Button>
+  </SafeAreaView>
+);
+
 };
 
 const styles = StyleSheet.create({
@@ -137,6 +144,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  emptyCartText: {
+  textAlign: 'center',
+  marginTop: 40,
+  fontSize: 16,
+  color: 'gray',
+},
+
   cartItemPrice: {
     fontSize: 14,
     color: '#777',

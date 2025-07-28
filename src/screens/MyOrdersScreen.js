@@ -58,7 +58,11 @@ const MyOrdersScreen = () => {
   const renderItem = ({ item }) => (
     <View style={styles.orderCard}>
       <Text style={styles.status}>{item.status}</Text>
-      <Text style={styles.info}>Location: {item.location}</Text>
+      <Text style={styles.info}>Location: {item.location === "FoodData"
+        ? "Law Canteen"
+        : item.location === "FoodData2"
+        ? "Sports Canteen"
+        : "Select Location"}</Text>
       <Text style={styles.info}>Date: {item.timestamp?.toDate().toLocaleString()}</Text>
       <Text style={styles.info}>Total: ₹{parseFloat(item.total)}</Text>
 
@@ -94,6 +98,9 @@ const MyOrdersScreen = () => {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.container}
+        ListEmptyComponent={
+                <Text style={styles.emptyText}>No Orders Currently. Order Now!</Text>
+        }
       />
     </SafeAreaView>
   );
@@ -110,6 +117,12 @@ const styles = StyleSheet.create({
   paddingHorizontal: 16,
   paddingTop: 40, 
   paddingBottom: 8,
+},
+emptyText: {
+  textAlign: 'center',
+  marginTop: 50,
+  fontSize: 16,
+  color: 'red',
 },
 
   orderCard: {

@@ -485,7 +485,11 @@ const renderPopularDishItem = ({ item }) => {
     onPress={() => navigation.navigate("LocationSelect")}
   >
     <Text style={styles.locationButtonText}>
-      {locationId || "Select Location"}
+      {locationId === "FoodData"
+        ? "Law Canteen"
+        : locationId === "FoodData2"
+        ? "Sports Canteen"
+        : "Select Location" || "Select Location"}
     </Text>
   </TouchableOpacity>
 </View>
