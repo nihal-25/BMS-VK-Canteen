@@ -5,12 +5,14 @@ import { CartProvider } from "./src/context/CartContext";
 import { AuthenticationContextProvider } from "./src/service/authentication.context";
 import { Navigation } from "./src/navigation/Navigation";
 import { LocationProvider } from "./src/screens/LocationContext";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Import the initialized Firebase services
 import { auth, firestore } from "./src/config/firebaseConfig"; 
 
 const App = () => {
   return (
+  <SafeAreaProvider>
     <PaperProvider>
       <LocationProvider>
         <CartProvider>
@@ -20,6 +22,7 @@ const App = () => {
         </CartProvider>
       </LocationProvider>
     </PaperProvider>
+  </SafeAreaProvider>
   );
 };
 

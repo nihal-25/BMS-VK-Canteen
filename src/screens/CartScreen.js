@@ -8,9 +8,10 @@ import { useNavigation } from '@react-navigation/native';
 import { getAuth } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useLocation } from './LocationContext';
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const CartScreen = () => {
+  const insets = useSafeAreaInsets();
   const { cart, removeFromCart, clearCart } = useCart(); 
   const navigation = useNavigation();
   const firestore = getFirestore();
@@ -111,7 +112,7 @@ const CartScreen = () => {
     <Button
       mode="contained"
       onPress={handlePay}
-      style={styles.proceedButton}
+      style={{...styles.proceedButton,paddingBottom: insets.bottom}}
       color={colors.green}
       disabled={cart.length === 0}
     >

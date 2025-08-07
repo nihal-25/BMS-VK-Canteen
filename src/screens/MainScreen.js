@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef,useContext } from "react";
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -10,6 +9,8 @@ import {
   TouchableOpacity,
   ToastAndroid,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Platform, StatusBar } from "react-native";
 import RNPickerSelect from "react-native-picker-select";
 import { Searchbar, Button, Appbar } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,8 @@ import { Picker } from '@react-native-picker/picker';
 import { useLocation } from './LocationContext';
 import { firestore } from '../config/firebaseConfig';
 import { getAuth } from 'firebase/auth';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 const categories = [
   {
@@ -50,6 +53,7 @@ const categories = [
 ];
 
 const MainScreen = ({route, navigation }) => {
+  const insets = useSafeAreaInsets();
   const firestore = getFirestore();
   const { locationId } = useLocation() ;
   useEffect(() => {
@@ -475,7 +479,10 @@ const renderPopularDishItem = ({ item }) => {
         renderItem={renderMenuItem}
         keyExtractor={(item) => item.FoodName}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.menuList}
+         contentContainerStyle={{
+         ...styles.menuList,
+         paddingBottom: insets.bottom, // 👈 Add enough padding
+         }}
         ListHeaderComponent={
           <>
            <View style={styles.header}>
@@ -540,6 +547,7 @@ const renderPopularDishItem = ({ item }) => {
           styles.bottomBar,
           {
             transform: [{ translateY }],
+            paddingBottom: insets.bottom,
           },
         ]}
       >
@@ -712,6 +720,7 @@ locationButtonText: {
     justifyContent: "space-between",
     borderTopWidth: 1,
     borderTopColor: colors.gray,
+    //paddingBottom: Platform.OS === 'android' ? insets.bottom : 0,
   },
 
   button: {
@@ -781,6 +790,7 @@ locationButtonText: {
   menuItemList: {
     paddingLeft: 16,
     paddingRight: 16,
+    paddingBottom: 100
   },
 });
 

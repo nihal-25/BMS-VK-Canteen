@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -9,6 +8,7 @@ import {
   Animated,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Searchbar, Button } from 'react-native-paper';
 import Icon from "react-native-vector-icons/Ionicons";
 import { Ionicons } from '@expo/vector-icons';
@@ -16,8 +16,10 @@ import { colors } from "../utils/colors";
 import { useCart } from "../context/CartContext";
 import { useLocation } from './LocationContext';
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SearchScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const firestore = getFirestore();
   const { locationId } = useLocation();
   const { cart, addToCart, removeFromCart, cartItems } = useCart();
@@ -114,7 +116,7 @@ const SearchScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.menuList}
       />
-      <Animated.View style={[styles.bottomBar, { transform: [{ translateY }] }]}>
+      <Animated.View style={[styles.bottomBar, { transform: [{ translateY}],paddingBottom: insets.bottom, }]}>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("MainScreen")}>
           <Icon name="home-outline" size={24} color={colors.black} />
         </TouchableOpacity>

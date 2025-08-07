@@ -1,16 +1,18 @@
-import React, { useState, useContext, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
+import React, { useState, useContext, useEffect,useRef } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image,Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../utils/colors";
 import { getAuth, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthenticationContext } from "../service/authentication.context";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ProfileScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [userDetails, setUserDetails] = useState({ name: '', email: '', profilePicture: '' });
   const { setUser } = useContext(AuthenticationContext); // Access the setUser function from the context
-
+  const scrollY = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (navigation.isFocused()) {
       const params = navigation.getState().routes.find(route => route.name === "Profile")?.params;
@@ -107,6 +109,11 @@ const ProfileScreen = ({ navigation }) => {
   const getInitials = (name) => {
     return name ? name.charAt(0).toUpperCase() : "";
   };
+   const translateY = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [0, 100],
+    extrapolate: "clamp",
+  });
 
   return (
     <View style={styles.container}>
@@ -199,7 +206,7 @@ const ProfileScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bottomBar}>
+      <Animated.View style={[styles.bottomBar, { transform: [{ translateY}],paddingBottom: insets.bottom, }]}>
         <TouchableOpacity
           onPress={() => navigation.navigate("MainScreen")}
         >
@@ -224,7 +231,7 @@ const ProfileScreen = ({ navigation }) => {
             color={colors.black}
           />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 };
