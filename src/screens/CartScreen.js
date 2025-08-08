@@ -113,7 +113,6 @@ const CartScreen = () => {
       mode="contained"
       onPress={handlePay}
       style={{...styles.proceedButton,paddingBottom: insets.bottom}}
-      color={colors.green}
       disabled={cart.length === 0}
     >
       Proceed to Pay
@@ -181,9 +180,11 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   proceedButton: {
-    margin: 20,
+    color:colors.gray,
+    marginBottom: 26,
+    margin: 10,
     padding: 10,
-    backgroundColor: colors.green,
+    backgroundColor: colors.pure,
   },
 });
 

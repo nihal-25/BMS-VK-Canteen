@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   outOfStockButton: {
-    backgroundColor: 'red',
+    backgroundColor: colors.pure,
     padding: 10,
     borderRadius: 5,
   },
@@ -645,7 +645,7 @@ locationText: {
   marginRight: 8,
 },
 locationButton: {
-  backgroundColor: 'red',
+  backgroundColor: colors.pure,
   paddingVertical: 6,
   paddingHorizontal: 12,
   borderRadius: 8,
@@ -758,7 +758,7 @@ locationButtonText: {
     position: "absolute",
     right: -6,
     top: -6,
-    backgroundColor: "red",
+    backgroundColor: colors.pure,
     borderRadius: 10,
     width: 20,
     height: 20,

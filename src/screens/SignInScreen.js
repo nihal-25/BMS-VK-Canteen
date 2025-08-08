@@ -57,7 +57,6 @@ export const SignInScreen = ({ navigation, route }) => {
   };
 
   const handleGoogleSignIn = () => {
-    // TODO: Add Google Sign-In logic
     console.log('Google Sign-In pressed');
   };
 
