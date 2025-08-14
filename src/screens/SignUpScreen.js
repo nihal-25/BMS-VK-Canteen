@@ -3,6 +3,7 @@ import { SafeAreaView, StyleSheet, Text, Alert } from 'react-native';
 import { TextInput } from '../components/TextInput';
 import { Button } from '../components/button'; 
 import { colors } from '../utils/colors';
+import { sendEmailVerification } from "firebase/auth";
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
@@ -21,36 +22,44 @@ const SignUpScreen = ({ navigation, route }) => {
   }, [emailParam]);
 
   const handleSignUpPress = async () => {
-    if (!email || !password || !name || !rePassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-  
-    if (password !== rePassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-  
-    try {
-      const auth = getAuth();
-      const firestore = getFirestore();
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-  
-      // Store additional user details in Firestore
-      await setDoc(doc(firestore, 'users', user.uid), {
-        name,
-        email,
-        createdAt: new Date(),
-      });
-  
-      // ✅ Navigate to location selector after signup
-      navigation.replace('LocationSelect');
-  
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    }
-  };
+  if (!email || !password || !name || !rePassword) {
+    Alert.alert('Error', 'Please fill in all fields');
+    return;
+  }
+
+  if (password !== rePassword) {
+    Alert.alert('Error', 'Passwords do not match');
+    return;
+  }
+
+  try {
+    const auth = getAuth();
+    const firestore = getFirestore();
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Send verification email
+    await sendEmailVerification(user);
+
+    Alert.alert(
+      'Verification Email Sent',
+      'Please check your email and verify before logging in.'
+    );
+
+    // Store user in Firestore only after verification OR mark as "unverified"
+    await setDoc(doc(firestore, 'users', user.uid), {
+      name,
+      email,
+      createdAt: new Date(),
+    });
+
+    // Redirect to login instead of LocationSelect until verified
+    navigation.replace('SignIn');
+
+  } catch (error) {
+   Alert.alert('Error', error.message);
+  }
+};
   
   return (
     <SafeAreaView style={styles.container}>

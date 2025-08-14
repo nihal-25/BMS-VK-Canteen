@@ -12,6 +12,7 @@ import {
 import { TextInput } from '../components/TextInput';
 import { Button } from '../components/button';
 import GoogleButton from '../components/GoogleButton';
+import { Alert } from 'react-native';
 import { colors } from '../utils/colors';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -22,39 +23,50 @@ export const SignInScreen = ({ navigation, route }) => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  const handleSignInPress = async () => {
-    setEmailError('');
-    setPasswordError('');
+const handleSignInPress = async () => {
+  setEmailError('');
+  setPasswordError('');
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!email) {
-      setEmailError('Email is required');
+  if (!email) {
+    setEmailError('Email is required');
+    return;
+  }
+
+  if (!emailRegex.test(email)) {
+    setEmailError('Invalid email format');
+    return;
+  }
+
+  if (!password) {
+    setPasswordError('Password is required');
+    return;
+  }
+
+  try {
+    const auth = getAuth();
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user; // ✅ Extract the user
+
+    if (!user.emailVerified) { // ✅ Correct property name
+      Alert.alert(
+        'Email not verified',
+        'Please verify your email before signing in.'
+      );
+      await auth.signOut();
       return;
     }
 
-    if (!emailRegex.test(email)) {
-      setEmailError('Invalid email format');
-      return;
-    }
+    // Redirect to location selector screen
+    navigation.replace('LocationSelect');
+    
+  } catch (error) {
+    console.log(error);
+    setPasswordError('Incorrect email or password');
+  }
+};
 
-    if (!password) {
-      setPasswordError('Password is required');
-      return;
-    }
-
-    try {
-      const auth = getAuth();
-      await signInWithEmailAndPassword(auth, email, password);
-
-      // Redirect to location selector screen
-      navigation.replace('LocationSelect');
-
-    } catch (error) {
-      console.log(error);
-      setPasswordError('Incorrect email or password');
-    }
-  };
 
   const handleGoogleSignIn = () => {
     console.log('Google Sign-In pressed');
