@@ -8,7 +8,7 @@ Built with **React Native (Expo)** and **Firebase**, it enables students and sta
 
 ## 📸 Screenshots
 ### Home Screen  
-<img src="./screenshots/home.png" alt="Home Page" width="600"/> 
+<img src="./screenshots/home.jpeg" alt="Home Page" width="600"/> 
 
 ### SignIn Screen  
 ![SignIn Screen](./screenshots/signin.jpeg)  
