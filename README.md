@@ -8,19 +8,19 @@ Built with **React Native (Expo)** and **Firebase**, it enables students and sta
 
 ## 📸 Screenshots
 ### Home Screen  
-<img src="./screenshots/home.jpeg" alt="Home Page" width="300" height="300"/> 
+<img src="./screenshots/home.jpeg" alt="Home Page" width="300" height="400"/> 
 
 ### SignIn Screen  
-![SignIn Screen](./screenshots/signin.jpeg)  
+<img src="./screenshots/signin.jpeg" alt="Home Page" width="300" height="400"/>
 
 ### Menu Categories  
-![Menu Categories](./screenshots/menu.jpeg)  
+<img src="./screenshots/menu.jpeg" alt="Home Page" width="300" height="400"/>  
 
 ### Cart & Checkout  
-![Cart](./screenshots/cart.jpeg) 
+<img src="./screenshots/cart.jpeg" alt="Home Page" width="300" height="400"/> 
 
 ### Profile Screen  
-![Home Screen](./screenshots/profile.jpeg) 
+<img src="./screenshots/profile.jpeg" alt="Home Page" width="300" height="400"/> 
 
 ---
 
