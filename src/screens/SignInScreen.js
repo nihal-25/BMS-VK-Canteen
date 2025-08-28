@@ -139,7 +139,7 @@ const handleSignInPress = async () => {
             />
           </View>
 
-          <View style={styles.dividerContainer}>
+          {/* <View style={styles.dividerContainer}>
             <View style={styles.line} />
             <Text style={styles.dividerText}>or continue with</Text>
             <View style={styles.line} />
@@ -147,7 +147,7 @@ const handleSignInPress = async () => {
 
           <View style={styles.googleButtonContainer}>
             <GoogleButton onPress={handleGoogleSignIn} />
-          </View>
+          </View> */}
 
           <View style={styles.bottomTextContainer}>
             <Text style={styles.bottomText}>

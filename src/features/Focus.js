@@ -55,33 +55,33 @@ const Focus = ({ navigation }) => {
     setSubject(lowerCaseQuery);
   };
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: '55551343994-7t0rheie1nc8g0835k9rr80r1dev5fl8.apps.googleusercontent.com',
-    webClientId: '55551343994-7t0rheie1nc8g0835k9rr80r1dev5fl8.apps.googleusercontent.com',
-    androidClientId:'55551343994-b4s4smd06036oos2p190i0rtaq8km000.apps.googleusercontent.com',
-    iosClientId:'55551343994-01oit49cep3s863rb18plt5bfn83kost.apps.googleusercontent.com',
-    redirectUri: 'https://auth.expo.io/@nihal2/VK',
-  });
+  // const [request, response, promptAsync] = Google.useAuthRequest({
+  //   expoClientId: '55551343994-7t0rheie1nc8g0835k9rr80r1dev5fl8.apps.googleusercontent.com',
+  //   webClientId: '55551343994-7t0rheie1nc8g0835k9rr80r1dev5fl8.apps.googleusercontent.com',
+  //   androidClientId:'55551343994-b4s4smd06036oos2p190i0rtaq8km000.apps.googleusercontent.com',
+  //   iosClientId:'55551343994-01oit49cep3s863rb18plt5bfn83kost.apps.googleusercontent.com',
+  //   redirectUri: 'https://auth.expo.io/@nihal2/VK',
+  // });
 
-  React.useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.authentication;
-      const auth = getAuth();
-      const credential = GoogleAuthProvider.credential(id_token);
-      signInWithCredential(auth, credential)
-        .then(() => {
-          // Navigate to home or dashboard
-          navigation.navigate('Home');
-        })
-        .catch((err) => {
-          Alert.alert('Google Sign-In Error', err.message);
-        });
-    }
-  }, [response]);
+  // React.useEffect(() => {
+  //   if (response?.type === 'success') {
+  //     const { id_token } = response.authentication;
+  //     const auth = getAuth();
+  //     const credential = GoogleAuthProvider.credential(id_token);
+  //     signInWithCredential(auth, credential)
+  //       .then(() => {
+  //         // Navigate to home or dashboard
+  //         navigation.navigate('Home');
+  //       })
+  //       .catch((err) => {
+  //         Alert.alert('Google Sign-In Error', err.message);
+  //       });
+  //   }
+  // }, [response]);
 
-  const handleGoogleSignUp = () => {
-    promptAsync();
-  };
+  // const handleGoogleSignUp = () => {
+  //   promptAsync();
+  // };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -123,8 +123,8 @@ const Focus = ({ navigation }) => {
                 labelStyle={{ color: colors.white }}
               />
             </View>
-            <Divider text="or continue with" />
-            <GoogleButton onPress={handleGoogleSignUp} style={styles.google} />
+            {/* <Divider text="or continue with" />
+            <GoogleButton onPress={handleGoogleSignUp} style={styles.google} /> */}
           </View>
           <View style={styles.bottomText}>
             <Text style={styles.text5}>

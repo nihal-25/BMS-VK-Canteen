@@ -5,13 +5,22 @@
         "distribution": "internal"
       },
       "preview": {
-        "distribution": "internal"
+        "distribution": "internal",
+        "android": {
+    "buildType": "apk"
+  }
       },
       "production": {
-        "android": {
-          "buildType": "apk"
-        }
+      "releaseChannel": "production",
+      "distribution": "store",
+      "android": {
+        "buildType": "apk"
       }
     }
+    },
+    
+    "cli": {
+    "appVersionSource": "local" 
+  }
   }
   

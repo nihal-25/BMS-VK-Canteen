@@ -43,7 +43,12 @@ const PrivacyPolicyScreen = () => {
           We implement industry-standard measures to protect your data from unauthorized access or misuse.
         </Text>
 
-        <Text style={styles.subheader}>5. Changes to Policy</Text>
+         <Text style={styles.subheader}>5. Account Deletion</Text>
+        <Text style={styles.paragraph}>
+          If you wish to delete your account and related data, please use the in-app ‘Delete Account’ option, or contact us at nihal6mn@gmail.com.
+        </Text>
+
+        <Text style={styles.subheader}>6. Changes to Policy</Text>
         <Text style={styles.paragraph}>
           This policy may be updated occasionally. Continued use of the app implies acceptance of the updated policy.
         </Text>

@@ -34,7 +34,7 @@ const SendFeedbackScreen = () => {
         </Text>
 
         <TouchableOpacity onPress={handleEmailPress}>
-          <Text style={styles.email}>vk-bms@gmail.com</Text>
+          <Text style={styles.email}>nihal6mn@gmail.com</Text>
         </TouchableOpacity>
 
         <Text style={styles.note}>

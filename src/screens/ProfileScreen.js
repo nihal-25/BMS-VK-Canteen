@@ -6,6 +6,8 @@ import { getAuth, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthenticationContext } from "../service/authentication.context";
+import { deleteUser } from "firebase/auth";
+import { deleteDoc } from "firebase/firestore";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ProfileScreen = ({ navigation }) => {
@@ -106,6 +108,53 @@ const ProfileScreen = ({ navigation }) => {
     navigation.navigate("SendFeedback");
   };
 
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      "Delete Account",
+      "This will permanently delete your account and all related data. Are you sure?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const auth = getAuth();
+              const firestore = getFirestore();
+              const user = auth.currentUser;
+
+              if (user) {
+                // Delete user document from Firestore
+                await deleteDoc(doc(firestore, "users", user.uid));
+
+                // Delete user from Firebase Authentication
+                await deleteUser(user);
+
+                // Clear AsyncStorage
+                const keys = await AsyncStorage.getAllKeys();
+                if (keys.length > 0) {
+                  await AsyncStorage.multiRemove(keys);
+                }
+
+                // Reset user in context
+                if (typeof setUser === "function") {
+                  setUser(null);
+                }
+
+                Alert.alert("Account Deleted", "Your account has been permanently deleted.");
+                navigation.navigate("Focus");
+              }
+            } catch (error) {
+              console.error("Error deleting account:", error);
+              Alert.alert("Error", error.message);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const getInitials = (name) => {
     return name ? name.charAt(0).toUpperCase() : "";
   };
@@ -189,6 +238,18 @@ const ProfileScreen = ({ navigation }) => {
               style={styles.menuIcon}
             />
             <Text style={styles.menuText}>Help & FAQs</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="gray" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={handleDeleteAccount}>
+          <View style={styles.menuItemContent}>
+            <Ionicons
+              name="trash-outline"
+              size={26}
+              color="gray"
+              style={styles.menuIcon}
+            />
+            <Text style={[styles.menuText, { color: "red" }]}>Delete Account</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="gray" />
         </TouchableOpacity>

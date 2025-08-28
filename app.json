@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "VK",
-    "slug": "VK",
+    "slug": "vk",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,7 +19,10 @@
       }
     },
     "android": {
-      "package": "com.nihal2.VK3",
+      "package": "com.bms.vk",
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 1,
+      "jsEngine": "jsc",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -28,11 +31,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-   
+    "plugins": [
+      "expo-build-properties"
+    ],
     "extra": {
       "eas": {
-        "projectId": "e0f41869-1224-45ec-83dd-e56158015b2d"
+        "projectId": "bc725262-b101-4737-a757-ad0ff40cba00"
       }
-    }
+    },
+    "owner": "nihal_25"
   }
 }
