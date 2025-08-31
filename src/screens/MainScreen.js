@@ -514,16 +514,24 @@ const renderPopularDishItem = ({ item }) => {
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Top picks for you</Text>
-              <FlatList
-                data={topPicks}
-                renderItem={renderTopPickItem}
-                keyExtractor={(item) => item.id || item.FoodName}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.flatList}
-              />
-            </View>
+  <Text style={styles.sectionTitle}>Top picks for you</Text>
+  <FlatList
+    data={topPicks}
+    renderItem={renderTopPickItem}
+    keyExtractor={(item) => item.id || item.FoodName}
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={styles.flatList}
+    ListEmptyComponent={
+      <View style={{ alignItems: "center", justifyContent: "center", flex: 1, padding: 20 }}>
+        <Text style={{ fontSize: 16, fontWeight: "600", color: "gray", textAlign: "center" }}>
+          No items to show yet, start ordering!
+        </Text>
+      </View>
+    }
+  />
+</View>
+
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Popular Dishes</Text>
