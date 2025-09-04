@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef,useContext } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,21 +9,29 @@ import {
   TouchableOpacity,
   ToastAndroid,
 } from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Platform, StatusBar } from "react-native";
 import RNPickerSelect from "react-native-picker-select";
-import { Searchbar, Button, Appbar } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
+import { Searchbar, Button, Appbar } from "react-native-paper";
+import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../utils/colors";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useCart } from "../context/CartContext";
-import { doc, getDocs, getFirestore, collection, onSnapshot, collectionGroup, query, where } from "firebase/firestore";
-import { Picker } from '@react-native-picker/picker';
-import { useLocation } from './LocationContext';
-import { firestore } from '../config/firebaseConfig';
-import { getAuth } from 'firebase/auth';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import {
+  doc,
+  getDocs,
+  getFirestore,
+  collection,
+  onSnapshot,
+  collectionGroup,
+  query,
+  where,
+} from "firebase/firestore";
+import { Picker } from "@react-native-picker/picker";
+import { useLocation } from "./LocationContext";
+import { firestore } from "../config/firebaseConfig";
+import { getAuth } from "firebase/auth";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const categories = [
   {
@@ -52,162 +60,156 @@ const categories = [
   },
 ];
 
-const MainScreen = ({route, navigation }) => {
+const MainScreen = ({ route, navigation }) => {
   const insets = useSafeAreaInsets();
   const firestore = getFirestore();
-  const { locationId } = useLocation() ;
+  const { locationId } = useLocation();
   useEffect(() => {
-   if (locationId) {
-     console.log('Selected Location:', locationId);
-     // Use this to route orders, show location-specific items, etc.
-   }
- }, [locationId]);
+    if (locationId) {
+      console.log("Selected Location:", locationId);
+      // Use this to route orders, show location-specific items, etc.
+    }
+  }, [locationId]);
   const [foodData, setFoodData] = useState([]);
   const foodDataQry = collection(firestore, locationId);
   const { cart, addToCart, removeFromCart } = useCart();
 
- const [searchQuery, setSearchQuery] = useState('');
- 
-//  useEffect(() => {
-//    const unsubscribe = onSnapshot(foodDataQry, (snapshot) => {
-//      setFoodData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-//    });
+  const [searchQuery, setSearchQuery] = useState("");
 
-//    return () => unsubscribe(); // Unsubscribe when the component unmounts
+  //  useEffect(() => {
+  //    const unsubscribe = onSnapshot(foodDataQry, (snapshot) => {
+  //      setFoodData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+  //    });
 
-//  }, []);  
+  //    return () => unsubscribe(); // Unsubscribe when the component unmounts
 
- // THIS ABOVE WAS BEFORE CODE I CHANGED WHEN I ADDED FOOD COLLECTION IN FOODDATA COLLECTION
+  //  }, []);
 
- useEffect(() => {
-  const fetchFoodData = async () => {
-    if (!locationId) return;
+  // THIS ABOVE WAS BEFORE CODE I CHANGED WHEN I ADDED FOOD COLLECTION IN FOODDATA COLLECTION
 
+  useEffect(() => {
+    const fetchFoodData = async () => {
+      if (!locationId) return;
+
+      const foodDataRef = collection(firestore, locationId);
+
+      const unsubscribe = onSnapshot(foodDataRef, (snapshot) => {
+        const data = snapshot.docs.map((doc) => {
+          const docData = doc.data();
+          const nameKey = docData.FoodName?.trim().toLowerCase();
+          const price = docData.FoodPrice;
+
+          return {
+            id: nameKey + "_" + price, // ✅ synthetic ID matches popularDishes
+            FoodName: docData.FoodName,
+            FoodPrice: price,
+            FoodImageUrl: docData.FoodImageUrl,
+            InStock: docData.InStock,
+            Pop: docData.Pop,
+          };
+        });
+
+        setFoodData(data);
+      });
+
+      return () => unsubscribe(); // Clean up on unmount
+    };
+
+    fetchFoodData();
+  }, [locationId]);
+
+  const onChangeSearch = (query) => setSearchQuery(query);
+  const incrementQuantity = (item) => {
+    addToCart(item);
+  };
+
+  const decrementQuantity = (item) => {
+    removeFromCart(item);
+  };
+
+  const [topPicks, setTopPicks] = useState([]);
+
+  useEffect(() => {
+    const user = getAuth().currentUser;
+    if (!user || !locationId) return;
+
+    const userRef = doc(firestore, "userOrders", user.uid);
+    const pastOrdersRef = collection(userRef, "pastOrders");
     const foodDataRef = collection(firestore, locationId);
 
-    const unsubscribe = onSnapshot(foodDataRef, (snapshot) => {
-      const data = snapshot.docs.map((doc) => {
-        const docData = doc.data();
-        const nameKey = docData.FoodName?.trim().toLowerCase();
-        const price = docData.FoodPrice;
+    let unsubscribeOrders;
+    let unsubscribeStock;
 
-        return {
-          id: nameKey + "_" + price,  // ✅ synthetic ID matches popularDishes
-          FoodName: docData.FoodName,
-          FoodPrice: price,
-          FoodImageUrl: docData.FoodImageUrl,
-          InStock: docData.InStock,
-          Pop: docData.Pop,
-        };
+    let currentOrders = [];
+    let currentStockMap = new Map();
+
+    const updateTopPicks = () => {
+      const orderMap = new Map();
+
+      currentOrders.forEach((order) => {
+        if (order.location !== locationId) return;
+
+        order.cart?.forEach((item) => {
+          const nameKey = item.FoodName?.trim().toLowerCase();
+          if (!nameKey) return;
+
+          const uniqueKey = nameKey + "_" + item.FoodPrice;
+
+          const existing = orderMap.get(uniqueKey) || {
+            ...item,
+            quantity: 0,
+            id: uniqueKey,
+          };
+
+          existing.quantity += item.quantity || 0;
+          orderMap.set(uniqueKey, existing);
+        });
       });
 
-      setFoodData(data);
-    });
-
-    return () => unsubscribe(); // Clean up on unmount
-  };
-
-  fetchFoodData();
-}, [locationId]);
-
-
-const onChangeSearch = (query) => setSearchQuery(query);
-const incrementQuantity = (item) => {
-  addToCart(item);
-};
-
-
-
-const decrementQuantity = (item) => {
-  removeFromCart(item);
-};
-
-const [topPicks, setTopPicks] = useState([]);
-
-useEffect(() => {
-  const user = getAuth().currentUser;
-  if (!user || !locationId) return;
-
-  const userRef = doc(firestore, 'userOrders', user.uid);
-  const pastOrdersRef = collection(userRef, 'pastOrders');
-  const foodDataRef = collection(firestore, locationId);
-
-  let unsubscribeOrders;
-  let unsubscribeStock;
-
-  let currentOrders = [];
-  let currentStockMap = new Map();
-
-  const updateTopPicks = () => {
-    const orderMap = new Map();
-
-    currentOrders.forEach(order => {
-      if (order.location !== locationId) return;
-
-      order.cart?.forEach(item => {
-        const nameKey = item.FoodName?.trim().toLowerCase();
-        if (!nameKey) return;
-
-        const uniqueKey = nameKey + '_' + item.FoodPrice;
-
-        const existing = orderMap.get(uniqueKey) || {
+      const sorted = Array.from(orderMap.values())
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5)
+        .map((item) => ({
           ...item,
-          quantity: 0,
-          id: uniqueKey,
-        };
+          InStock: currentStockMap.get(item.id) ?? false,
+        }));
 
-        existing.quantity += item.quantity || 0;
-        orderMap.set(uniqueKey, existing);
+      setTopPicks(sorted);
+    };
+
+    // 👂 Real-time listener for user's pastOrders
+    unsubscribeOrders = onSnapshot(pastOrdersRef, (snapshot) => {
+      currentOrders = snapshot.docs.map((doc) => doc.data());
+      updateTopPicks();
+    });
+
+    // 👂 Real-time listener for stock (FoodData or FoodData2)
+    unsubscribeStock = onSnapshot(foodDataRef, (snapshot) => {
+      currentStockMap = new Map();
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const key = data.FoodName?.trim().toLowerCase() + "_" + data.FoodPrice;
+        const inStock =
+          data.InStock === true ||
+          data.InStock === "true" ||
+          data.InStock === 1;
+        currentStockMap.set(key, inStock);
       });
+      updateTopPicks();
     });
 
-    const sorted = Array.from(orderMap.values())
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 5)
-      .map(item => ({
-        ...item,
-        InStock: currentStockMap.get(item.id) ?? false,
-      }));
-
-    setTopPicks(sorted);
-  };
-
-  // 👂 Real-time listener for user's pastOrders
-  unsubscribeOrders = onSnapshot(pastOrdersRef, (snapshot) => {
-    currentOrders = snapshot.docs.map(doc => doc.data());
-    updateTopPicks();
-  });
-
-  // 👂 Real-time listener for stock (FoodData or FoodData2)
-  unsubscribeStock = onSnapshot(foodDataRef, (snapshot) => {
-    currentStockMap = new Map();
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      const key = data.FoodName?.trim().toLowerCase() + '_' + data.FoodPrice;
-      const inStock = data.InStock === true || data.InStock === 'true' || data.InStock === 1;
-      currentStockMap.set(key, inStock);
-    });
-    updateTopPicks();
-  });
-
-  return () => {
-    if (unsubscribeOrders) unsubscribeOrders();
-    if (unsubscribeStock) unsubscribeStock();
-  };
-}, [locationId]);
-
-
-
- 
+    return () => {
+      if (unsubscribeOrders) unsubscribeOrders();
+      if (unsubscribeStock) unsubscribeStock();
+    };
+  }, [locationId]);
 
   const [location, setLocation] = useState("");
-  const { cartItems,  } = useCart();
+  const { cartItems } = useCart();
   const [quantities, setQuantities] = useState({});
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const {  updateCartItem } = useCart();
-
-  
+  const { updateCartItem } = useCart();
 
   const handleAddToCart = (item) => {
     addToCart(item);
@@ -244,7 +246,7 @@ useEffect(() => {
       return newQuantities;
     });
   };
-  
+
   const renderCategoryItem = ({ item }) => (
     <TouchableOpacity
       style={styles.categoryItem}
@@ -269,198 +271,230 @@ useEffect(() => {
   const renderTopPickItem = ({ item }) => {
     const cartItem = cart.find((cartItem) => cartItem.id === item.id);
     const quantity = cartItem ? cartItem.quantity : 0;
-    if (!item) return null; 
-      return (
-        <View style={styles.topPickItem}>
-          <Image source={{ uri: item.FoodImageUrl }} style={styles.topPickImage} />
-          <Text style={styles.topPickTitle}>{item.FoodName}</Text>
-          <Text style={styles.itemPrice}>₹{item.FoodPrice}</Text>
-  
-          {(item.InStock === true || item.InStock === 'true' || item.InStock === 1) ? (
-                  quantity > 0 ? (
-                    <View style={styles.quantityContainer}>
-                      <Button mode="outlined" onPress={() => decrementQuantity(item)}>
-                        <Ionicons name="remove" size={16} color="black" />
-                      </Button>
-                      <Text style={styles.quantityText}>{quantity}</Text>
-                      <Button mode="outlined" onPress={() => incrementQuantity(item)}>
-                        <Ionicons name="add" size={16} color="black" />
-                      </Button>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.addButton}
-                      onPress={() => incrementQuantity(item)}
-                    >
-                      <Text style={styles.addButtonText}>Add</Text>
-                    </TouchableOpacity>
-                  ) 
-                  ): (
-              <TouchableOpacity style={styles.outOfStockButton} disabled>
-                <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
+    if (!item) return null;
+    return (
+      <View style={styles.topPickItem}>
+        <Image
+          source={{ uri: item.FoodImageUrl }}
+          style={styles.topPickImage}
+        />
+        <Text style={styles.topPickTitle}>{item.FoodName}</Text>
+        <Text style={styles.horizontalItemPrice}>₹{item.FoodPrice}</Text>
+
+        {item.InStock === true ||
+        item.InStock === "true" ||
+        item.InStock === 1 ? (
+          quantity > 0 ? (
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => decrementQuantity(item)}
+              >
+                <Ionicons name="remove" size={16} color="black" />
               </TouchableOpacity>
-            )}
-        </View>
-      );
-     
-    
-  };
-
-const [popularDishes, setPopularDishes] = useState([]);
-
-useEffect(() => {
-  if (!locationId) return;
-
-  const confirmedOrdersRef = collection(firestore, 'confirmedOrders');
-  const foodRef = collection(firestore, locationId);
-
-  let unsubscribeOrders;
-  let unsubscribeStock;
-
-  // Temp in-memory data holders
-  let currentOrders = [];
-  let currentStockMap = new Map();
-
-  // 👉 Recalculate Top 5 Popular Dishes
-  const updatePopularDishes = () => {
-    const dishMap = new Map();
-
-    currentOrders.forEach(order => {
-      if (order.location !== locationId) return;
-
-      order.cart?.forEach(item => {
-        const nameKey = item.FoodName?.trim().toLowerCase();
-        if (!nameKey) return;
-
-        const uniqueKey = nameKey + '_' + item.FoodPrice;
-
-        const existing = dishMap.get(uniqueKey) || {
-          ...item,
-          quantity: 0,
-          id: uniqueKey,
-        };
-
-        existing.quantity += item.quantity || 0;
-        dishMap.set(uniqueKey, existing);
-      });
-    });
-
-    const sorted = Array.from(dishMap.values())
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 5)
-      .map(item => ({
-        ...item,
-        InStock: currentStockMap.get(item.id) ?? false,
-      }));
-
-    setPopularDishes(sorted);
-  };
-
-  // 👂 Listener for confirmedOrders (real-time orders)
-  unsubscribeOrders = onSnapshot(confirmedOrdersRef, (snapshot) => {
-    currentOrders = snapshot.docs.map(doc => doc.data());
-    updatePopularDishes();
-  });
-
-  // 👂 Listener for stock updates (FoodData)
-  unsubscribeStock = onSnapshot(foodRef, (snapshot) => {
-    currentStockMap = new Map();
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      const key = data.FoodName?.trim().toLowerCase() + '_' + data.FoodPrice;
-      const inStock = data.InStock === true || data.InStock === 'true' || data.InStock === 1;
-      currentStockMap.set(key, inStock);
-    });
-    updatePopularDishes();
-  });
-
-  // 🚿 Cleanup on unmount
-  return () => {
-    if (unsubscribeOrders) unsubscribeOrders();
-    if (unsubscribeStock) unsubscribeStock();
-  };
-}, [locationId]);
-
-
-// ✅ Render a single dish item
-const renderPopularDishItem = ({ item }) => {
-  if (!item) return null;
-
-  const cartItem = cart.find((cartItem) => cartItem.id === item.id);
-  const quantity = cartItem ? cartItem.quantity : 0;
-
-  return (
-    <View style={styles.topPickItem}>
-      <Image source={{ uri: item.FoodImageUrl }} style={styles.topPickImage} />
-      <Text style={styles.topPickTitle}>{item.FoodName}</Text>
-      <Text style={styles.itemPrice}>₹{item.FoodPrice}</Text>
-
-      {item.InStock ? (
-        quantity > 0 ? (
-          <View style={styles.quantityContainer}>
-            <Button mode="outlined" onPress={() => decrementQuantity(item)}>
-              <Ionicons name="remove" size={16} color="black" />
-            </Button>
-            <Text style={styles.quantityText}>{quantity}</Text>
-            <Button mode="outlined" onPress={() => incrementQuantity(item)}>
-              <Ionicons name="add" size={16} color="black" />
-            </Button>
-          </View>
+              <Text style={styles.quantityText}>{quantity}</Text>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => incrementQuantity(item)}
+              >
+                <Ionicons name="add" size={16} color="black" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => incrementQuantity(item)}
+            >
+              <Text style={styles.addButtonText}>Add</Text>
+            </TouchableOpacity>
+          )
         ) : (
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => incrementQuantity(item)}
-          >
-            <Text style={styles.addButtonText}>Add</Text>
+          <TouchableOpacity style={styles.outOfStockButton} disabled>
+            <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
           </TouchableOpacity>
-        )
-      ) : (
-        <TouchableOpacity style={styles.outOfStockButton} disabled>
-          <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-};
-
-  
- 
-  const renderMenuItem = ({ item }) => {
-    
-      const cartItem = cart.find((cartItem) => cartItem.id === item.id);
-      const quantity = cartItem ? cartItem.quantity : 0;
-      return(
-    <View style={styles.menuItem}>
-        <Image source={{ uri: item.FoodImageUrl }} style={styles.menuItemImage} />
-        <Text style={styles.menuItemTitle}>{item.FoodName}</Text>
-        <Text style={styles.itemPrice}>₹{item.FoodPrice}</Text> 
-        {(item.InStock === true || item.InStock === 'true' || item.InStock === 1) ? (
-        quantity > 0 ? (
-          <View style={styles.quantityContainer}>
-            <Button mode="outlined" onPress={() => decrementQuantity(item)}>
-              <Ionicons name="remove" size={16} color="black" />
-            </Button>
-            <Text style={styles.quantityText}>{quantity}</Text>
-            <Button mode="outlined" onPress={() => incrementQuantity(item)}>
-              <Ionicons name="add" size={16} color="black" />
-            </Button>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => incrementQuantity(item)}
-          >
-            <Text style={styles.addButtonText}>Add</Text>
-          </TouchableOpacity>
-        ) 
-        ): (
-    <TouchableOpacity style={styles.outOfStockButton} disabled>
-      <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
-    </TouchableOpacity>
-  )}
+        )}
       </View>
-      );
-};
+    );
+  };
+
+  const [popularDishes, setPopularDishes] = useState([]);
+
+  useEffect(() => {
+    if (!locationId) return;
+
+    const confirmedOrdersRef = collection(firestore, "confirmedOrders");
+    const foodRef = collection(firestore, locationId);
+
+    let unsubscribeOrders;
+    let unsubscribeStock;
+
+    // Temp in-memory data holders
+    let currentOrders = [];
+    let currentStockMap = new Map();
+
+    // 👉 Recalculate Top 5 Popular Dishes
+    const updatePopularDishes = () => {
+      const dishMap = new Map();
+
+      currentOrders.forEach((order) => {
+        if (order.location !== locationId) return;
+
+        order.cart?.forEach((item) => {
+          const nameKey = item.FoodName?.trim().toLowerCase();
+          if (!nameKey) return;
+
+          const uniqueKey = nameKey + "_" + item.FoodPrice;
+
+          const existing = dishMap.get(uniqueKey) || {
+            ...item,
+            quantity: 0,
+            id: uniqueKey,
+          };
+
+          existing.quantity += item.quantity || 0;
+          dishMap.set(uniqueKey, existing);
+        });
+      });
+
+      const sorted = Array.from(dishMap.values())
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5)
+        .map((item) => ({
+          ...item,
+          InStock: currentStockMap.get(item.id) ?? false,
+        }));
+
+      setPopularDishes(sorted);
+    };
+
+    // 👂 Listener for confirmedOrders (real-time orders)
+    unsubscribeOrders = onSnapshot(confirmedOrdersRef, (snapshot) => {
+      currentOrders = snapshot.docs.map((doc) => doc.data());
+      updatePopularDishes();
+    });
+
+    // 👂 Listener for stock updates (FoodData)
+    unsubscribeStock = onSnapshot(foodRef, (snapshot) => {
+      currentStockMap = new Map();
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const key = data.FoodName?.trim().toLowerCase() + "_" + data.FoodPrice;
+        const inStock =
+          data.InStock === true ||
+          data.InStock === "true" ||
+          data.InStock === 1;
+        currentStockMap.set(key, inStock);
+      });
+      updatePopularDishes();
+    });
+
+    // 🚿 Cleanup on unmount
+    return () => {
+      if (unsubscribeOrders) unsubscribeOrders();
+      if (unsubscribeStock) unsubscribeStock();
+    };
+  }, [locationId]);
+
+  // ✅ Render a single dish item
+  const renderPopularDishItem = ({ item }) => {
+    if (!item) return null;
+
+    const cartItem = cart.find((cartItem) => cartItem.id === item.id);
+    const quantity = cartItem ? cartItem.quantity : 0;
+
+    return (
+      <View style={styles.topPickItem}>
+        <Image
+          source={{ uri: item.FoodImageUrl }}
+          style={styles.topPickImage}
+        />
+        <Text style={styles.topPickTitle}>{item.FoodName}</Text>
+        <Text style={styles.horizontalItemPrice}>₹{item.FoodPrice}</Text>
+
+        {item.InStock ? (
+          quantity > 0 ? (
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => decrementQuantity(item)}
+              >
+                <Ionicons name="remove" size={16} color="black" />
+              </TouchableOpacity>
+              <Text style={styles.quantityText}>{quantity}</Text>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => incrementQuantity(item)}
+              >
+                <Ionicons name="add" size={16} color="black" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => incrementQuantity(item)}
+            >
+              <Text style={styles.addButtonText}>Add</Text>
+            </TouchableOpacity>
+          )
+        ) : (
+          <TouchableOpacity style={styles.outOfStockButton} disabled>
+            <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
+  const renderMenuItem = ({ item }) => {
+    const cartItem = cart.find((cartItem) => cartItem.id === item.id);
+    const quantity = cartItem ? cartItem.quantity : 0;
+    return (
+      <View style={styles.menuItem}>
+        <Image
+          source={{ uri: item.FoodImageUrl }}
+          style={styles.menuItemImage}
+        />
+        <View style={styles.menuItemContent}>
+          <Text style={styles.menuItemTitle}>{item.FoodName}</Text>
+          <Text style={styles.itemPrice}>₹{item.FoodPrice}</Text>
+        </View>
+        <View style={styles.buttonContainer}>
+          {item.InStock === true ||
+          item.InStock === "true" ||
+          item.InStock === 1 ? (
+            quantity > 0 ? (
+              <View style={styles.quantityContainer}>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => decrementQuantity(item)}
+                >
+                  <Ionicons name="remove" size={16} color="black" />
+                </TouchableOpacity>
+                <Text style={styles.quantityText}>{quantity}</Text>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => incrementQuantity(item)}
+                >
+                  <Ionicons name="add" size={16} color="black" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => incrementQuantity(item)}
+              >
+                <Text style={styles.addButtonText}>Add</Text>
+              </TouchableOpacity>
+            )
+          ) : (
+            <TouchableOpacity style={styles.outOfStockButton} disabled>
+              <Text style={styles.outOfStockButtonText}>Out of Stock</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   const translateY = scrollY.interpolate({
     inputRange: [0, 50],
@@ -468,38 +502,34 @@ const renderPopularDishItem = ({ item }) => {
     extrapolate: "clamp",
   });
 
-  
-
-
   return (
     <SafeAreaView style={styles.container}>
-   
       <FlatList
         data={foodData}
         renderItem={renderMenuItem}
         keyExtractor={(item) => item.FoodName}
         showsVerticalScrollIndicator={false}
-         contentContainerStyle={{
-         ...styles.menuList,
-         paddingBottom: insets.bottom, // 👈 Add enough padding
-         }}
+        contentContainerStyle={{
+          ...styles.menuList,
+          paddingBottom: insets.bottom, // 👈 Add enough padding
+        }}
         ListHeaderComponent={
           <>
-           <View style={styles.header}>
-  <Text style={styles.locationText}>Your Location:</Text>
-  <TouchableOpacity
-    style={styles.locationButton}
-    onPress={() => navigation.navigate("LocationSelect")}
-  >
-    <Text style={styles.locationButtonText}>
-      {locationId === "FoodData"
-        ? "Law Canteen"
-        : locationId === "FoodData2"
-        ? "Sports Canteen"
-        : "Select Location" || "Select Location"}
-    </Text>
-  </TouchableOpacity>
-</View>
+            <View style={styles.header}>
+              <Text style={styles.locationText}>Your Location:</Text>
+              <TouchableOpacity
+                style={styles.locationButton}
+                onPress={() => navigation.navigate("LocationSelect")}
+              >
+                <Text style={styles.locationButtonText}>
+                  {locationId === "FoodData"
+                    ? "Law Canteen"
+                    : locationId === "FoodData2"
+                    ? "Sports Canteen"
+                    : "Select Location" || "Select Location"}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Shop by categories</Text>
@@ -514,24 +544,37 @@ const renderPopularDishItem = ({ item }) => {
             </View>
 
             <View style={styles.section}>
-  <Text style={styles.sectionTitle}>Top picks for you</Text>
-  <FlatList
-    data={topPicks}
-    renderItem={renderTopPickItem}
-    keyExtractor={(item) => item.id || item.FoodName}
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={styles.flatList}
-    ListEmptyComponent={
-      <View style={{ alignItems: "center", justifyContent: "center", flex: 1, padding: 20 }}>
-        <Text style={{ fontSize: 16, fontWeight: "600", color: "gray", textAlign: "center" }}>
-          No items to show yet, start ordering!
-        </Text>
-      </View>
-    }
-  />
-</View>
-
+              <Text style={styles.sectionTitle}>Top picks for you</Text>
+              <FlatList
+                data={topPicks}
+                renderItem={renderTopPickItem}
+                keyExtractor={(item) => item.id || item.FoodName}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.flatList}
+                ListEmptyComponent={
+                  <View
+                    style={{
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flex: 1,
+                      padding: 20,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        color: "gray",
+                        textAlign: "center",
+                      }}
+                    >
+                      No items to show yet, start ordering!
+                    </Text>
+                  </View>
+                }
+              />
+            </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Popular Dishes</Text>
@@ -543,12 +586,10 @@ const renderPopularDishItem = ({ item }) => {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.flatList}
               />
-           </View>
-           
+            </View>
           </>
         }
       />
-      
 
       <Animated.View
         style={[
@@ -631,38 +672,50 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 8,
   },
+  menuItemContent: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: "center",
+  },
+  buttonContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
   outOfStockButton: {
     backgroundColor: colors.pure,
-    padding: 10,
-    borderRadius: 5,
+    marginTop: 1,    
+    borderRadius: 15,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
   },
   outOfStockButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
   },
   header: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  padding: 10,
-  backgroundColor: '#fff',
-},
-locationText: {
-  fontSize: 16,
-  fontWeight: 'bold',
-  marginRight: 8,
-},
-locationButton: {
-  backgroundColor: colors.pure,
-  paddingVertical: 6,
-  paddingHorizontal: 12,
-  borderRadius: 8,
-},
-locationButtonText: {
-  color: 'white',
-  fontWeight: 'bold',
-  fontSize: 14,
-},
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#fff",
+  },
+  locationText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginRight: 8,
+    color: colors.gray,
+  },
+  locationButton: {
+    backgroundColor: colors.pure,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  locationButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
 
   categoryTitle: {
     fontSize: 16,
@@ -674,8 +727,10 @@ locationButtonText: {
     color: colors.gray,
   },
   topPickItem: {
-    marginRight: 16,
+    marginRight: 32,
     alignItems: "center",
+    minWidth: 120,
+    paddingBottom:4,
   },
   topPickImage: {
     width: 100,
@@ -686,14 +741,22 @@ locationButtonText: {
     fontSize: 14,
     fontWeight: "600",
     marginTop: 8,
+    height: 40,          
+  textAlignVertical: 'top',
   },
+  horizontalItemPrice: {
+  fontSize: 14,
+  fontWeight: "400",
+  color: colors.gray,
+  marginBottom: 8,
+},
   itemPrice: {
     fontSize: 14,
     fontWeight: "400",
     color: colors.gray,
   },
   addButton: {
-    marginTop: 8,
+    marginTop: 19,
     backgroundColor: colors.pure,
     borderRadius: 20,
     paddingVertical: 5,
@@ -716,6 +779,8 @@ locationButtonText: {
     fontSize: 14,
     fontWeight: "600",
     marginTop: 8,
+    height: 40,          // Fixed height for all titles
+  textAlignVertical: 'top',
   },
   bottomBar: {
     position: "absolute",
@@ -748,9 +813,14 @@ locationButtonText: {
     marginTop: 8,
   },
   quantityButton: {
-    backgroundColor: colors.pure,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "black",
     borderRadius: 15,
-    padding: 5,
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
   },
   quantityButtonText: {
     color: colors.white,
@@ -785,6 +855,7 @@ locationButtonText: {
     padding: 16,
     borderBottomWidth: 1,
     borderColor: colors.gray2,
+    minHeight: 80,
   },
   menuItemImage: {
     width: 60,
@@ -798,7 +869,7 @@ locationButtonText: {
   menuItemList: {
     paddingLeft: 16,
     paddingRight: 16,
-    paddingBottom: 100
+    paddingBottom: 100,
   },
 });
 

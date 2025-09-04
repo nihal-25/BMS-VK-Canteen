@@ -185,9 +185,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   outOfStockButton: {
-    backgroundColor: 'red',
+    backgroundColor: colors.pure,
     padding: 10,
-    borderRadius: 5,
+    marginTop: 1,    
+    borderRadius: 15,
+    paddingVertical: 5,
+  
   },
   outOfStockButtonText: {
     color: 'white',
